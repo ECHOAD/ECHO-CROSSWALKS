@@ -18,44 +18,74 @@ firebase.initializeApp({
 
 const firestore = firebase.firestore();
 let color = "red";
-let count = 0;
+let countNormal = 10; // Agrege esta variable para manejar el tiempo del color red y green
+let countYellow = 5  // Esta para el color Yellow
 let activeLight = 0;
+let change = false;
 
 const circles = document.getElementsByClassName("circle");
 
 function changeLight() {
   circles[activeLight].className = "circle";
-  activeLight++;
+  //Cambie este codigo, para evitar que semaforo pase de verde a rojo.
+  // activeLight++; 
 
-  if (activeLight > 2) {
-    activeLight = 0;
+  // console.log(circles)
+  // if (activeLight > 2) {
+  //   activeLight = 0;
+  // }
+
+  switch (color) {
+    case "red":
+      activeLight = 1
+      break;
+    case "yellow":
+      if(change) {
+        activeLight = 0;
+        change = false;
+      }else {
+        activeLight = 2;
+        change = true;
+      }
+      break;
+    case "green":
+      activeLight = 1;
+      break;
+    default:
+      activeLight = 0;
+      break;
   }
-
   const currentLight = circles[activeLight];
   currentLight.classList.add(currentLight.getAttribute("color"));
   color = currentLight.getAttribute("color");
+  console.log(`Cambio color  ${color}`);
 }
 
 function App() {
   const semaforoRef = firestore.collection("semaforo");
   const query = semaforoRef;
   const [semaforos] = useCollectionData(query, { idField: "id" });
-  const [seconds, setSeconds] = React.useState(4);
+ 
+  const [seconds, setSeconds] = useState(countNormal);
   let activeLight = 0;
   let semaRef = firestore.collection("semaforo").doc(color);
-
+  
   useEffect(() => {
     if (seconds > 0) {
-      setTimeout(() => setSeconds(seconds), 1000);
+      setTimeout(() => setSeconds(seconds -1), 1000);
       semaRef.update({
-        tiempoactual: seconds,
+        tiempoactual: seconds
       });
     } else {
       changeLight();
-      console.log("Heyyyy");
       semaRef = firestore.collection("semaforo").doc(color);
       semaRef.get().then((doc) => {
-        setSeconds(Number(doc.data().tiempo));
+        if(color === "yellow"){ 
+          setSeconds(countYellow);
+        }else{
+          setSeconds(countNormal)
+        }
+        // setSeconds(Number(doc.data().tiempo)); Esta Linea esta Colocando un valor NaN en el estado
       });
       
     }
